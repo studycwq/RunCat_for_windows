@@ -16,11 +16,11 @@
     <PublishSingleFile>true</PublishSingleFile>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <Platforms>AnyCPU;x64</Platforms>
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
-    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
 	  <OutputPath></OutputPath>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>

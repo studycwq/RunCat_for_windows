@@ -2,25 +2,25 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net48-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>appIcon.ico</ApplicationIcon>
     <StartupObject>RunCat.Program</StartupObject>
     <Version>1.10.0</Version>
     <Authors>Takuto Nakamura</Authors>
-    <Description>A cute runnning cat animation on your windows taskbar.</Description>
+    <Description>A cute running cat animation on your windows taskbar.</Description>
     <Copyright>© 2021 Takuto Nakamura</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/Kyome22/RunCat_for_windows</PackageProjectUrl>
     <PublishSingleFile>true</PublishSingleFile>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <Platforms>AnyCPU;x64</Platforms>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
-	<OutputPath></OutputPath>
+	  <OutputPath></OutputPath>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
@@ -57,5 +57,9 @@
       <LastGenOutput>UserSettings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
+
+  <ItemGroup>
+   <PackageReference Include="System.Resources.Extensions" Version="6.0.0" />
+ </ItemGroup>
 
 </Project>

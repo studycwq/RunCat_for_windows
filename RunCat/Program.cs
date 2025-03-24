@@ -381,18 +381,6 @@ namespace RunCat
             cpuTimer.Start();
         }
         
-        private void HandleDoubleClick(object Sender, EventArgs e)
-        {
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "powershell",
-                UseShellExecute = false,
-                Arguments = " -c Start-Process taskmgr.exe",
-                CreateNoWindow = true,
-            };
-            Process.Start(startInfo);
-        }
-
         private void HandleDoubleClick(object sender, EventArgs e)
         {
             var identity = WindowsIdentity.GetCurrent();
@@ -400,6 +388,18 @@ namespace RunCat
             if (principal.IsInRole(WindowsBuiltInRole.Administrator))
             {
                 Process.Start("taskmgr.exe");
+            }
+            else
+            {
+                // 使用PowerShell作为备选方案启动任务管理器
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = "powershell",
+                    UseShellExecute = false,
+                    Arguments = " -c Start-Process taskmgr.exe",
+                    CreateNoWindow = true,
+                };
+                Process.Start(startInfo);
             }
         }
     }

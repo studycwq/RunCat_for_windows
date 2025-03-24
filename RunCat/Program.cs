@@ -39,6 +39,7 @@ namespace RunCat
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.Run(new RunCatApplicationContext());
 
             procMutex.ReleaseMutex();
@@ -77,7 +78,7 @@ namespace RunCat
 
             SystemEvents.UserPreferenceChanged += UserPreferenceChanged;
 
-            cpuUsage = new("Processor", "% Processor Time", "_Total");
+            cpuUsage = new PerformanceCounter("Processor Information", "% Processor Utility", "_Total");
             _ = cpuUsage.NextValue(); // discards first return value
 
             runnerMenu = new("Runner", null, new ToolStripMenuItem[]
@@ -149,6 +150,11 @@ namespace RunCat
                 themeMenu,
                 startupMenu,
                 runnerSpeedLimit,
+                new ToolStripSeparator(),
+                new ToolStripMenuItem($"{Application.ProductName} v{Application.ProductVersion}")
+                {
+                    Enabled = false
+                },
                 new ToolStripMenuItem("Exit", null, Exit)
             });
 
@@ -357,7 +363,7 @@ namespace RunCat
 
         private void CPUTick()
         {
-            interval = cpuUsage.NextValue();
+            interval = Math.Min(100, cpuUsage.NextValue()); // Sometimes got over 100% so it should be limited to 100%
             notifyIcon.Text = $"CPU: {interval:f1}%";
             interval = 200.0f / (float)Math.Max(1.0f, Math.Min(20.0f, interval / 5.0f));
             _ = interval;

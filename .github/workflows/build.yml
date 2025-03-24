@@ -10,16 +10,16 @@ jobs:
     runs-on: windows-2019
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           ref: 'master'
 
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '5.0.x'
           include-prerelease: true
 
-      - uses: nuget/setup-nuget@v1        
+      - uses: nuget/setup-nuget@v2
       - run: nuget restore RunCat.sln
 
       - name: .Net Build
@@ -40,7 +40,7 @@ jobs:
         run: |
           ls ${{ github.workspace }}\RunCat\bin\
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v2.2.4
+        uses: actions/upload-artifact@v4
         with:
           # Artifact name
           #name: # optional, default is artifact

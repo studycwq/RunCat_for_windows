@@ -22,14 +22,21 @@ using System.Windows.Forms;
 using System.Resources;
 using System.ComponentModel;
 using System.Security.Principal;
+using System.Runtime.InteropServices;
 
 namespace RunCat
 {
     static class Program
     {
+        [DllImport("user32.dll")]
+        private static extern bool SetProcessDPIAware();
+
         [STAThread]
         static void Main()
         {
+            // 设置DPI感知
+            SetProcessDPIAware();
+
             // terminate runcat if there's any existing instance
             var procMutex = new System.Threading.Mutex(true, "_RUNCAT_MUTEX", out var result);
             if (!result)
@@ -39,7 +46,6 @@ namespace RunCat
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.Run(new RunCatApplicationContext());
 
             procMutex.ReleaseMutex();
@@ -64,8 +70,8 @@ namespace RunCat
         private string manualTheme = UserSettings.Default.Theme;
         private string speed = UserSettings.Default.Speed;
         private Icon[] icons;
-        private readonly Timer animateTimer = new();
-        private readonly Timer cpuTimer = new();
+        private readonly Timer animateTimer = new Timer();
+        private readonly Timer cpuTimer = new Timer();
 
 
         public RunCatApplicationContext()
@@ -81,13 +87,13 @@ namespace RunCat
             cpuUsage = new PerformanceCounter("Processor Information", "% Processor Utility", "_Total");
             _ = cpuUsage.NextValue(); // discards first return value
 
-            runnerMenu = new("Runner", null, new ToolStripMenuItem[]
+            runnerMenu = new ToolStripMenuItem("Runner", null, new ToolStripMenuItem[]
             {
-                new("Cat", null, SetRunner)
+                new ToolStripMenuItem("Cat", null, SetRunner)
                 {
                     Checked = runner.Equals("cat")
                 },
-                new("Parrot", null, SetRunner)
+                new ToolStripMenuItem("Parrot", null, SetRunner)
                 {
                     Checked = runner.Equals("parrot")
                 },
@@ -97,23 +103,23 @@ namespace RunCat
                 }
             });
 
-            themeMenu = new("Theme", null, new ToolStripMenuItem[]
+            themeMenu = new ToolStripMenuItem("Theme", null, new ToolStripMenuItem[]
             {
-                new("Default", null, SetThemeIcons)
+                new ToolStripMenuItem("Default", null, SetThemeIcons)
                 {
                     Checked = manualTheme.Equals("")
                 },
-                new("Light", null, SetLightIcons)
+                new ToolStripMenuItem("Light", null, SetLightIcons)
                 {
                     Checked = manualTheme.Equals("light")
                 },
-                new("Dark", null, SetDarkIcons)
+                new ToolStripMenuItem("Dark", null, SetDarkIcons)
                 {
                     Checked = manualTheme.Equals("dark")
                 }
             });
 
-            startupMenu = new("Startup", null, SetStartup);
+            startupMenu = new ToolStripMenuItem("Startup", null, SetStartup);
             if (IsStartupEnabled())
             {
                 startupMenu.Checked = true;
@@ -158,7 +164,7 @@ namespace RunCat
                 new ToolStripMenuItem("Exit", null, Exit)
             });
 
-            notifyIcon = new()
+            notifyIcon = new NotifyIcon()
             {
                 Icon = Resources.light_cat_0,
                 ContextMenuStrip = contextMenuStrip,
@@ -186,22 +192,38 @@ namespace RunCat
         private bool IsStartupEnabled()
         {
             var keyName = @"Software\Microsoft\Windows\CurrentVersion\Run";
-            using var rKey = Registry.CurrentUser.OpenSubKey(keyName);
-            return rKey?.GetValue(Application.ProductName) != null;
+            RegistryKey rKey = Registry.CurrentUser.OpenSubKey(keyName);
+            try
+            {
+                return rKey?.GetValue(Application.ProductName) != null;
+            }
+            finally
+            {
+                if (rKey != null)
+                    rKey.Close();
+            }
         }
 
         private string GetAppsUseTheme()
         {
             var keyName = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize";
-            using var rKey = Registry.CurrentUser.OpenSubKey(keyName);
-            object value;
-            if (rKey == null || (value = rKey.GetValue("SystemUsesLightTheme")) == null)
+            RegistryKey rKey = Registry.CurrentUser.OpenSubKey(keyName);
+            try
             {
-                Console.WriteLine("Oh No! Couldn't get theme light/dark");
-                return "light";
+                object value;
+                if (rKey == null || (value = rKey.GetValue("SystemUsesLightTheme")) == null)
+                {
+                    Console.WriteLine("Oh No! Couldn't get theme light/dark");
+                    return "light";
+                }
+                var theme = (int)value;
+                return theme == 0 ? "dark" : "light";
             }
-            var theme = (int)value;
-            return theme == 0 ? "dark" : "light";
+            finally
+            {
+                if (rKey != null)
+                    rKey.Close();
+            }
         }
 
         private void SetIcons()
@@ -308,18 +330,26 @@ namespace RunCat
         {
             startupMenu.Checked = !startupMenu.Checked;
             var keyName = @"Software\Microsoft\Windows\CurrentVersion\Run";
-            using var rKey = Registry.CurrentUser.OpenSubKey(keyName, true);
-            if (startupMenu.Checked)
+            RegistryKey rKey = Registry.CurrentUser.OpenSubKey(keyName, true);
+            try
             {
-                var processModule = Process.GetCurrentProcess().MainModule;
-                if (processModule is { FileName: { } }) rKey?.SetValue(Application.ProductName, processModule.FileName);
+                if (startupMenu.Checked)
+                {
+                    var processModule = Process.GetCurrentProcess().MainModule;
+                    if (processModule != null && processModule.FileName != null && rKey != null)
+                        rKey.SetValue(Application.ProductName, processModule.FileName);
+                }
+                else
+                {
+                    if (rKey != null)
+                        rKey.DeleteValue(Application.ProductName, false);
+                }
             }
-            else
+            finally
             {
-                rKey?.DeleteValue(Application.ProductName, false);
+                if (rKey != null)
+                    rKey.Close();
             }
-
-            rKey?.Close();
         }
 
         private void Exit(object sender, EventArgs e)
